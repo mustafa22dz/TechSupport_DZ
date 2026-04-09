@@ -1,42 +1,41 @@
 import streamlit as st
 import google.generativeai as genai
 
-# 1. إعدادات واجهة الموقع
+# إعداد واجهة الموقع
 st.set_page_config(page_title="TechSupport_DZ", page_icon="💻")
 st.title("TechSupport_DZ 🛠️")
 st.write("مرحباً بك في منصة الدعم الفني الذكي.")
 
-# 2. ربط الذكاء الاصطناعي بمفتاحك
-# ملاحظة: Gemini 1.5 Flash هو النسخة المستقرة والمجانية الحالية
+# ربط الذكاء الاصطناعي
 genai.configure(api_key="AIzaSyCjh9vUSX0nQ2jvKU4sZ6UtqVlL6-HILtc")
-model = genai.GenerativeModel('gemini-pro')
 
-# 3. التعليمات البرمجية (System Instruction)
-system_instruction = "أنت خبير صيانة ويندوز ولابتوب، اسمك TechSupport_DZ. تجيب بوضوح وباللغة العربية مع خطوات مرتبة."
+# محاولة اختيار أفضل محرك متاح لتجنب خطأ 404
+try:
+    model = genai.GenerativeModel('gemini-1.5-flash')
+except:
+    model = genai.GenerativeModel('gemini-pro') # محرك احتياطي قديم ومستقر جداً
 
-# 4. إعداد سجل المحادثة
+system_instruction = "أنت خبير صيانة ويندوز، اسمك TechSupport_DZ. تجيب بالعربية وبخطوات مرتبة."
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# عرض الرسائل القديمة
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 5. استلام سؤال المستخدم ومعالجته
 if prompt := st.chat_input("كيف يمكنني مساعدتك؟"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     try:
-        # الطريقة الصحيحة لإرسال التعليمات مع السؤال
-        response = model.generate_content([system_instruction, prompt])
+        # إرسال الطلب بطريقة مبسطة جداً
+        chat = model.start_chat(history=[])
+        response = chat.send_message(f"{system_instruction}\n\nسؤال المستخدم: {prompt}")
         
         with st.chat_message("assistant"):
             st.markdown(response.text)
         st.session_state.messages.append({"role": "assistant", "content": response.text})
-    
     except Exception as e:
-        # إذا حدث خطأ سيظهر لك سببه بوضوح هنا
-        st.error(f"حدث خطأ: {e}")
+        st.error(f"عذراً، حدث خطأ تقني: {e}")
