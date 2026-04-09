@@ -7,8 +7,8 @@ st.title("TechSupport_DZ 🛠️")
 # ربط الـ API
 genai.configure(api_key="AIzaSyCjh9vUSX0nQ2jvKU4sZ6UtqVlL6-HILtc")
 
-# اختيار الموديل باسمه المباشر (هذا الاسم تقبله كل النسخ)
-model = genai.GenerativeModel('models/gemini-1.5-flash')
+# استخدام المحرك المستقر والمضمون
+model = genai.GenerativeModel('gemini-pro')
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -23,7 +23,6 @@ if prompt := st.chat_input("كيف يمكنني مساعدتك؟"):
         st.markdown(prompt)
 
     try:
-        # إرسال النص مباشرة
         response = model.generate_content(f"أنت خبير صيانة ويندوز جزائري ذكي. أجب على هذا السؤال: {prompt}")
         
         with st.chat_message("assistant"):
