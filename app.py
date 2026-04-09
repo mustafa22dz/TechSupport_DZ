@@ -9,7 +9,7 @@ st.write("مرحباً بك في منصة الدعم الفني الذكي.")
 # 2. ربط الذكاء الاصطناعي بمفتاحك
 # ملاحظة: Gemini 1.5 Flash هو النسخة المستقرة والمجانية الحالية
 genai.configure(api_key="AIzaSyCjh9vUSX0nQ2jvKU4sZ6UtqVlL6-HILtc")
-model = genai.GenerativeModel('gemini-1.5-flash-latest')
+model = genai.GenerativeModel('gemini-pro')
 
 # 3. التعليمات البرمجية (System Instruction)
 system_instruction = "أنت خبير صيانة ويندوز ولابتوب، اسمك TechSupport_DZ. تجيب بوضوح وباللغة العربية مع خطوات مرتبة."
