@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from openai import OpenAI
 
 # =========================
 # PAGE CONFIG
@@ -11,107 +11,65 @@ st.set_page_config(
 )
 
 st.title("TechSupport_DZ 🛠️")
-st.caption("مساعد دعم فني لمشاكل ويندوز واللابتوب")
+st.caption("مساعد دعم فني لمشاكل ويندوز واللابتوب (المزود السريع)")
 
 # =========================
-# API KEY
+# API KEY & BASE URL
 # =========================
-try:
-    API_KEY = st.secrets["GEMINI_API_KEY"]
-except Exception:
-    st.error("❌ لم يتم العثور على GEMINI_API_KEY في Secrets")
-    st.stop()
+# ملاحظة: يفضل وضع هذه القيم في Secrets لاحقاً، لكن سنضعها هنا لتعمل فوراً
+API_KEY = "sk-Nm3CRnIJjnHgBc8U9lHgN6ZSGU7UXPh3ROLrlPbAvy6N77AS"
+BASE_URL = "https://api.souimagery.fun/v1"
 
-genai.configure(api_key=API_KEY)
-
-# =========================
-# MODEL FALLBACK SYSTEM
-# =========================
-AVAILABLE_MODELS = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash"
-]
-
-def get_working_model():
-    for model_name in AVAILABLE_MODELS:
-        try:
-            model = genai.GenerativeModel(model_name)
-            test = model.generate_content("ping")
-            if test:
-                return model, model_name
-        except Exception:
-            continue
-    return None, None
+# إعداد العميل (Client)
+client = OpenAI(
+    api_key=API_KEY,
+    base_url=BASE_URL
+)
 
 # =========================
-# SESSION STATE
+# SESSION STATE (إدارة المحادثة)
 # =========================
 if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-if "model" not in st.session_state:
-    model, model_name = get_working_model()
-
-    if model is None:
-        st.error("❌ لم يتم العثور على أي موديل Gemini متاح لحسابك/API Key")
-        st.stop()
-
-    st.session_state.model = model
-    st.session_state.model_name = model_name
-
-# =========================
-# SHOW ACTIVE MODEL
-# =========================
-st.success(f"✅ متصل بـ: {st.session_state.model_name}")
+    # نضع تعليمات النظام كأول رسالة مخفية
+    st.session_state.messages = [
+        {"role": "system", "content": "أنت خبير دعم فني للحواسيب ومشاكل ويندوز، اسمك TechSupport_DZ. أجب بوضوح وباللغة العربية مع خطوات مرتبة."}
+    ]
 
 # =========================
 # DISPLAY CHAT HISTORY
 # =========================
+# نعرض الرسائل ما عدا رسالة الـ system
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+    if msg["role"] != "system":
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
 # =========================
-# USER INPUT
+# USER INPUT & RESPONSE
 # =========================
 prompt = st.chat_input("كيف يمكنني مساعدتك؟")
 
 if prompt:
-    st.session_state.messages.append({
-        "role": "user",
-        "content": prompt
-    })
-
+    # إضافة سؤال المستخدم للسجل وعرضه
+    st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     try:
-        # بناء history نصي
-        history_text = ""
-        for msg in st.session_state.messages:
-            role = "User" if msg["role"] == "user" else "Assistant"
-            history_text += f"{role}: {msg['content']}\n"
-
-        full_prompt = f"""
-أنت خبير دعم فني للحواسيب ومشاكل ويندوز.
-
-المحادثة السابقة:
-{history_text}
-
-أجب على آخر سؤال بشكل واضح ومفيد.
-"""
-
-        response = st.session_state.model.generate_content(full_prompt)
-        reply = response.text
+        # طلب الرد من الموديل
+        # ملاحظة: يمكنك تجربة "gpt-3.5-turbo" أو "gpt-4" أو "gemini-pro" حسب المتاح في souimagery
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo", 
+            messages=st.session_state.messages,
+            temperature=0.7
+        )
+        
+        reply = response.choices[0].message.content
 
     except Exception as e:
-        reply = f"❌ حدث خطأ أثناء توليد الرد:\n\n{str(e)}"
+        reply = f"❌ حدث خطأ في الاتصال بالمزود:\n\n{str(e)}"
 
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": reply
-    })
-
+    # إضافة رد البوت للسجل وعرضه
+    st.session_state.messages.append({"role": "assistant", "content": reply})
     with st.chat_message("assistant"):
         st.markdown(reply)
